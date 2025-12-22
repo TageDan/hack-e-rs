@@ -21,4 +21,7 @@ pub trait MMIO {
 
     /// Defines behavior for reading from the memory map. (address is relative to self.lower_bound())
     fn read(&mut self, address: u16) -> u16;
+
+    /// Reset the mmio interface (called for all interfaces when vm is reset)
+    fn reset(&mut self);
 }

@@ -1,6 +1,8 @@
 #![no_std]
 
 extern crate alloc;
+use core::ops::Range;
+
 use alloc::boxed::Box;
 
 /// The hack-e-rs crate provides a implementation for a hack-computer virtual machine described in the course nand2tetris.
@@ -17,18 +19,74 @@ use alloc::boxed::Box;
 /// Main VM struct. Used togheter with MMIO types to create "devices" and to run ".hack" files.
 pub mod mmio;
 
+/// len of memory with 15-bit addresses
+const MEM_LEN: usize = 0b1000_0000_0000_0000;
+
 pub struct VM<'a> {
     pc: u16,
-    rom: [Instruction; u16::MAX as usize + 1],
-    // 15 bit addresses
-    ram: [u16; 0b1000_0000_0000_0000],
+    rom: [Instruction; MEM_LEN],
+    ram: [u16; MEM_LEN],
     // memory mapped io's
-    mmio: &'a [Box<dyn mmio::MMIO>],
+    mmio: &'a mut [Box<dyn mmio::MMIO>],
     a_reg: u16,
     d_reg: u16,
 }
 
+impl<'a> VM<'a> {
+    /// create a new VM with specified optional list of mmio's
+    pub fn new(mmio: Option<&'a mut [Box<dyn mmio::MMIO>]>) -> Self {
+        Self {
+            pc: 0,
+            // empty instruction
+            rom: [Instruction::new(0b0); MEM_LEN],
+            ram: [0; MEM_LEN],
+            mmio: mmio.unwrap_or(&mut []),
+            a_reg: 0,
+            d_reg: 0,
+        }
+    }
+
+    /// Load program into rom (extend program with zeroes in order to overwrite the rest of the memory)
+    pub fn load(&mut self, program: &[u16]) {
+        program
+            .iter()
+            .chain((0..).map(|_| &0))
+            .zip(self.rom.iter_mut())
+            .for_each(|(x, y)| *y = Instruction(*x));
+    }
+
+    /// run a single instruction
+    pub fn step(&mut self) {
+        let instr = self.rom[self.pc as usize];
+
+        let (res, dest, jump) = instr.exec(self.a_reg, self.d_reg, self.ram[self.a_reg as usize]);
+
+        if jump {
+            self.pc = self.a_reg;
+        } else {
+            self.pc += 1;
+        }
+
+        match dest {
+            x if x.m() => self.ram[self.a_reg as usize] = res,
+            x if x.a() => self.a_reg = res,
+            x if x.d() => self.d_reg = res,
+            _ => (),
+        }
+    }
+
+    /// reset the vm to restart the program
+    pub fn reset(&mut self) {
+        self.pc = 0;
+        self.ram = [0; MEM_LEN];
+        self.mmio.iter_mut().for_each(|x| x.reset());
+        self.a_reg = 0;
+        self.d_reg = 0;
+    }
+}
+
 /// Single instruction
+#[derive(Clone, Copy)]
 struct Instruction(u16);
 
 impl Instruction {
@@ -172,7 +230,7 @@ impl Destination {
     fn d(&self) -> bool {
         self.1
     }
-    fn m(self) -> bool {
+    fn m(&self) -> bool {
         self.2
     }
 }
