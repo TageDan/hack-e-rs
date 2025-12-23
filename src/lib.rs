@@ -1,7 +1,6 @@
 #![no_std]
 
 extern crate alloc;
-use core::ops::Range;
 
 use alloc::boxed::Box;
 
@@ -22,25 +21,25 @@ pub mod mmio;
 /// len of memory with 15-bit addresses
 const MEM_LEN: usize = 0b1000_0000_0000_0000;
 
-pub struct VM<'a> {
+pub struct VM {
     pc: u16,
     rom: [Instruction; MEM_LEN],
     ram: [u16; MEM_LEN],
     // memory mapped io's
-    mmio: &'a mut [Box<dyn mmio::MMIO>],
+    mmio: Box<[Box<dyn mmio::MMIO>]>,
     a_reg: u16,
     d_reg: u16,
 }
 
-impl<'a> VM<'a> {
+impl VM {
     /// create a new VM with specified optional list of mmio's
-    pub fn new(mmio: Option<&'a mut [Box<dyn mmio::MMIO>]>) -> Self {
+    pub fn new(mmio: Option<Box<[Box<dyn mmio::MMIO>]>>) -> Self {
         Self {
             pc: 0,
             // empty instruction
             rom: [Instruction::new(0b0); MEM_LEN],
             ram: [0; MEM_LEN],
-            mmio: mmio.unwrap_or(&mut []),
+            mmio: mmio.unwrap_or(Box::new([])),
             a_reg: 0,
             d_reg: 0,
         }
