@@ -320,9 +320,9 @@ impl Debug for Instruction {
         f.write_str("| comp | | dest | | jump |")?;
         f.write_fmt(format_args!(
             "|{: ^5?}| |{: ^5?}| |{: ^5?}|",
-            self.comp().unwrap(),
+            self.comp(),
             self.dest(),
-            self.jmp().unwrap()
+            self.jmp()
         ))
     }
 }
