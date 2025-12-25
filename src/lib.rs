@@ -2,6 +2,8 @@
 
 extern crate alloc;
 
+use core::fmt::Debug;
+
 use alloc::boxed::Box;
 
 /// The hack-e-rs crate provides a implementation for a hack-computer virtual machine described in the course nand2tetris.
@@ -230,6 +232,30 @@ impl Computation {
             _ => panic!("INVALID COMPUTATION!"),
         }
     }
+
+    fn comp_str(&self) -> &'static str {
+        match self.0 {
+            0b101010 => "0",
+            0b111111 => "1",
+            0b111010 => "-1",
+            0b001100 => "x",
+            0b110000 => "y",
+            0b001101 => "!x",
+            0b110001 => "!y",
+            0b001111 => "-x",
+            0b110011 => "-y",
+            0b011111 => "x+1",
+            0b110111 => "y+1",
+            0b001110 => "x-1",
+            0b110010 => "y-1",
+            0b000010 => "x+y",
+            0b010011 => "x-y",
+            0b000111 => "y-x",
+            0b000000 => "x&y",
+            0b010101 => "y|x",
+            _ => panic!("INVALID COMPUTATION!"),
+        }
+    }
 }
 
 /// Destination (A,D,M)
@@ -281,6 +307,56 @@ impl Jump {
 
         // if any jump condition is true, jump
         lt || eq || gt
+    }
+}
+
+impl Debug for Instruction {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str("| comp | | dest | | jump |")?;
+        f.write_fmt(format_args!(
+            "|{: ^5?}| |{: ^5?}| |{: ^5?}|",
+            self.comp().unwrap(),
+            self.dest(),
+            self.jmp().unwrap()
+        ))
+    }
+}
+
+impl Debug for Computation {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_fmt(format_args!("{}", self.comp_str()))
+    }
+}
+
+impl Debug for Jump {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let res = match (self.lt(), self.eq(), self.gt()) {
+            (false, false, false) => "no",
+            (true, true, true) => "yes",
+            (true, false, false) => "lt",
+            (false, true, false) => "eq",
+            (false, false, true) => "gt",
+            (true, true, false) => "le",
+            (true, false, true) => "ne",
+            (false, true, true) => "ge",
+        };
+        f.write_str(res)
+    }
+}
+
+impl Debug for Destination {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let res = match (self.a(), self.d(), self.m()) {
+            (false, false, false) => "none",
+            (true, true, true) => "AMD",
+            (true, false, false) => "A",
+            (false, true, false) => "D",
+            (false, false, true) => "M",
+            (true, true, false) => "AD",
+            (true, false, true) => "AM",
+            (false, true, true) => "DM",
+        };
+        f.write_str(res)
     }
 }
 
