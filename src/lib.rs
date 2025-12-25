@@ -102,7 +102,7 @@ impl VM {
     fn write_ram(&mut self, val: u16) {
         for mmio in self.mmio.iter_mut() {
             if mmio.range().contains(&self.a_reg) {
-                mmio.write(mmio.inner_address(self.a_reg), val);
+                mmio.write(val, mmio.inner_address(self.a_reg));
                 return;
             }
         }
