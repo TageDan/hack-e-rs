@@ -58,7 +58,7 @@ impl VM {
     pub fn step(&mut self) {
         let instr = self.rom[self.pc as usize];
 
-        let (res, dest, jump) = instr.exec(self.a_reg, self.d_reg, self.ram[self.a_reg as usize]);
+        let (res, dest, jump) = instr.exec(self.a_reg, self.d_reg, self.read_ram());
 
         if jump {
             self.pc = self.a_reg;
@@ -67,7 +67,7 @@ impl VM {
         }
 
         match dest {
-            x if x.m() => self.ram[self.a_reg as usize] = res,
+            x if x.m() => self.write_ram(res),
             x if x.a() => self.a_reg = res,
             x if x.d() => self.d_reg = res,
             _ => (),
@@ -81,6 +81,25 @@ impl VM {
         self.mmio.iter_mut().for_each(|x| x.reset());
         self.a_reg = 0;
         self.d_reg = 0;
+    }
+
+    fn read_ram(&self) -> u16 {
+        for mmio in self.mmio.iter() {
+            if mmio.range().contains(&self.a_reg) {
+                return mmio.read(mmio.inner_address(self.a_reg));
+            }
+        }
+        return self.ram[self.a_reg as usize];
+    }
+
+    fn write_ram(&mut self, val: u16) {
+        for mmio in self.mmio.iter_mut() {
+            if mmio.range().contains(&self.a_reg) {
+                mmio.write(mmio.inner_address(self.a_reg), val);
+                return;
+            }
+        }
+        self.ram[self.a_reg as usize] = val;
     }
 }
 
