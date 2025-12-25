@@ -317,9 +317,9 @@ impl Jump {
 
 impl Debug for Instruction {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str("| comp | | dest | | jump |")?;
+        f.write_str("\r\n| comp | | dest | | jump |\r\n")?;
         f.write_fmt(format_args!(
-            "|{: ^5?}| |{: ^5?}| |{: ^5?}|",
+            "|{: ^5?}| |{: ^5?}| |{: ^5?}|\r\n",
             self.comp(),
             self.dest(),
             self.jmp()
