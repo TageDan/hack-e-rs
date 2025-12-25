@@ -112,7 +112,7 @@ impl VM {
 
 /// Single instruction
 #[derive(Clone, Copy)]
-struct Instruction(u16);
+pub struct Instruction(u16);
 
 impl Instruction {
     /// Create instruction from binary representation
