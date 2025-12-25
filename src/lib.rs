@@ -85,6 +85,11 @@ impl VM {
         self.d_reg = 0;
     }
 
+    /// get program rom
+    pub fn get_rom(&self) -> &[Instruction; MEM_LEN] {
+        &self.rom
+    }
+
     fn read_ram(&self) -> u16 {
         for mmio in self.mmio.iter() {
             if mmio.range().contains(&self.a_reg) {
